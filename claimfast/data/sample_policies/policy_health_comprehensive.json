@@ -1,0 +1,134 @@
+{
+  "policy_id": "POL_HEALTH_001",
+  "policy_type": "health_comprehensive",
+  "policyholder_name": "Jane Smith",
+  "family_members": [
+    {
+      "name": "Jane Smith",
+      "relation": "Self",
+      "age": 35,
+      "dob": "1989-03-15"
+    },
+    {
+      "name": "John Smith",
+      "relation": "Spouse",
+      "age": 37,
+      "dob": "1987-06-20"
+    },
+    {
+      "name": "Alice Smith",
+      "relation": "Daughter",
+      "age": 8,
+      "dob": "2016-01-10"
+    }
+  ],
+  "status": "active",
+  "start_date": "2023-04-01",
+  "end_date": "2024-03-31",
+  "premium_paid": true,
+  "coverage": {
+    "claim_types": ["health", "motor", "property"],
+    "plan_type": "family_floater",
+    "sum_insured": 1000000,
+    "sum_insured_per_member": 1000000,
+    "deductible": 5000,
+    "co_insurance_percentage": 0,
+    "includes_hospitalization": true,
+    "hospitalization_limit": 1000000,
+    "includes_daycare": true,
+    "daycare_limit": 100000,
+    "includes_ambulance": true,
+    "ambulance_limit": 10000,
+    "includes_post_hospitalization": true,
+    "post_hospitalization_days": 30,
+    "includes_pre_hospitalization": true,
+    "pre_hospitalization_days": 30,
+    "includes_preventive_care": true,
+    "preventive_care_limit": 50000,
+    "includes_outpatient": false,
+    "includes_dental": false,
+    "includes_maternity": true,
+    "maternity_limit": 200000,
+    "includes_newborn_coverage": true,
+    "newborn_coverage_limit": 100000
+  },
+  "exclusions": {
+    "exclude_pre_existing_disease": false,
+    "pre_existing_waiting_period_months": 24,
+    "exclude_hospitalization_first_30_days": true,
+    "exclude_cosmetic_surgery": true,
+    "exclude_fertility_treatment": false,
+    "exclude_organ_transplant": false,
+    "exclude_mental_health": false,
+    "exclude_alcohol_related": true,
+    "exclude_drug_abuse": true,
+    "exclude_high_risk_sports": true,
+    "exclude_war_terrorism": true,
+    "exclude_pregnancy_complications": false,
+    "exclude_vaccination": true,
+    "exclude_diagnostic_procedures": false
+  },
+  "covered_treatments": [
+    "Cancer treatment",
+    "Heart surgery",
+    "Organ transplant",
+    "Dialysis",
+    "ICU treatment",
+    "Maternity & childbirth",
+    "Orthopedic surgery",
+    "Neurological disorders",
+    "Respiratory conditions",
+    "Emergency medical evacuation"
+  ],
+  "network_hospitals": {
+    "total_network": 10000,
+    "major_cities": [
+      "Apollo Hospitals",
+      "Fortis Healthcare",
+      "Max Healthcare",
+      "Manipal Hospitals",
+      "Dr. Reddy's Hospitals",
+      "AIIMS (selected)"
+    ]
+  },
+  "claim_process": {
+    "cashless_facility": true,
+    "reimbursement_available": true,
+    "max_settlement_days": 15,
+    "documentation_required": [
+      "Admission letter",
+      "Discharge summary",
+      "Itemized bill",
+      "Medical reports",
+      "Prescription",
+      "Lab test reports"
+    ]
+  },
+  "additional_benefits": {
+    "health_checkup_annually": true,
+    "health_checkup_frequency": "yearly",
+    "wellness_programs": true,
+    "telemedicine_consultation": true,
+    "health_coach_assistance": true,
+    "policy_renewal_guarantee": true,
+    "lifetime_renewability": true
+  },
+  "premium_details": {
+    "monthly_premium": 3500,
+    "annual_premium": 42000,
+    "payment_frequency": "monthly",
+    "payment_mode": "online",
+    "gst": 18,
+    "annual_gst": 7560,
+    "annual_total": 49560
+  },
+  "metadata": {
+    "created_date": "2023-04-01T09:00:00Z",
+    "last_modified": "2024-01-10T14:20:00Z",
+    "valid_from": "2024-04-01",
+    "valid_till": "2025-03-31",
+    "insurer": "HealthPlus Insurance Ltd",
+    "branch_code": "BRANCH_MH02",
+    "policy_version": "1.5"
+  }
+}

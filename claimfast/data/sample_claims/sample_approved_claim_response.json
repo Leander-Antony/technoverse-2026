@@ -1,0 +1,125 @@
+{
+  "claim_id": "CLM_MOTOR_2024_001",
+  "claim_type": "motor",
+  "submission_time": "2024-01-15T10:30:00Z",
+  "claimant": {
+    "name": "John Doe",
+    "email": "john.doe@email.com",
+    "phone": "9876543210",
+    "policy_id": "POL_MOTOR_001"
+  },
+  "incident_details": {
+    "date": "2024-01-15T08:45:00Z",
+    "location": "NH48, Near Bangalore",
+    "description": "Vehicle collision with another car at traffic junction. Damage to front bumper and windshield. No injuries reported.",
+    "vehicle_details": {
+      "registration_number": "MH02AB1234",
+      "damage_type": "collision",
+      "damage_areas": ["front_bumper", "windshield", "hood"]
+    }
+  },
+  "damage_assessment": {
+    "assessment_time": "2024-01-15T10:45:30Z",
+    "vision_api_analysis": {
+      "damage_type": "collision_front_end",
+      "severity_score": 45,
+      "severity_level": "medium",
+      "affected_components": ["front_bumper", "windshield", "hood", "grille"],
+      "confidence": 0.92,
+      "fraud_flag_visual": false,
+      "estimated_damage_cost": 225000,
+      "repair_feasibility": "repairable"
+    }
+  },
+  "policy_evaluation": {
+    "evaluation_time": "2024-01-15T10:50:00Z",
+    "coverage_valid": true,
+    "coverage_details": {
+      "collision_coverage": true,
+      "collision_limit": 500000,
+      "applicable_deductible": 10000,
+      "net_coverage": 490000
+    },
+    "exclusions_triggered": []
+  },
+  "fraud_detection": {
+    "analysis_time": "2024-01-15T10:55:00Z",
+    "fraud_risk_score": 15,
+    "risk_level": "low",
+    "fraud_flags": [],
+    "analysis_details": {
+      "claim_history_check": "no_previous_claims",
+      "duplicate_claim_check": "no_duplicates",
+      "description_mismatch": false,
+      "metadata_consistency": "consistent"
+    }
+  },
+  "decision": {
+    "decision_time": "2024-01-15T11:00:00Z",
+    "final_decision": "approved",
+    "payout_calculation": {
+      "estimated_damage": 225000,
+      "less_deductible": 10000,
+      "claimable_amount": 215000,
+      "less_depreciation": 20000,
+      "approved_payout": 195000,
+      "rounding": 0,
+      "final_payout": 195000
+    },
+    "confidence_score": 0.94,
+    "decision_reasoning": "Claim is valid. Vehicle collision damage confirmed through image analysis (severity 45/100). Policy provides full coverage for collision damage with ₹10,000 deductible. No fraud indicators detected. Approved payout: ₹195,000 after deductible and depreciation."
+  },
+  "explainability": {
+    "generation_time": "2024-01-15T11:05:00Z",
+    "explanation_summary": "APPROVED - Your claim has been approved for a payout of ₹195,000",
+    "explanation_text": "Detailed IRDAI-compliant explanation with all policy clauses, damage findings, fraud assessment, and decision reasoning...",
+    "policy_clauses_used": [
+      "Collision Coverage - Full coverage for accidental collision damage",
+      "Deductible Clause - ₹10,000 deductible applies to all claims",
+      "Depreciation Policy - 10% depreciation on repairs over 5 years",
+      "No Fraudulent Activity - No fraud indicators detected"
+    ],
+    "damage_findings": {
+      "damage_type": "collision_front_end",
+      "severity": "medium",
+      "affected_parts": "front_bumper, windshield, hood, grille",
+      "assessment_confidence": "92%",
+      "estimated_repair_cost": "₹225,000",
+      "visual_anomalies": "none"
+    },
+    "fraud_signals": [],
+    "compliance_status": "IRDAI-ready"
+  },
+  "processing_summary": {
+    "total_processing_time_seconds": 35,
+    "stages_completed": [
+      "FNOL Intake Validation",
+      "Damage Assessment (Vision API)",
+      "Policy Coverage Evaluation",
+      "Fraud Risk Detection",
+      "Decision Making",
+      "Explainability & Audit"
+    ],
+    "agents_involved": 6,
+    "audit_trail_entries": 12,
+    "system_status": "completed"
+  },
+  "next_steps": {
+    "claim_settlement": "Payment will be processed within 5 business days",
+    "documentation_required": [
+      "Original invoice/receipt for repairs",
+      "Repair estimate from authorized center",
+      "Police accident report copy",
+      "Bank account details for transfer"
+    ],
+    "contact_for_queries": "support@claimfast.com | 1800-200-3030"
+  },
+  "metadata": {
+    "claim_version": "1.0",
+    "processing_backend": "ClaimFast v1.0",
+    "gemini_vision_model": "gemini-1.5-vision-latest",
+    "final_review_status": "automated_decision_final",
+    "manual_review_required": false,
+    "escalation_flag": false
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "policy_id": "POL_MOTOR_001",
+  "policy_type": "motor_comprehensive",
+  "policyholder_name": "John Doe",
+  "vehicle_details": {
+    "registration_number": "MH02AB1234",
+    "make": "Maruti",
+    "model": "Swift",
+    "variant": "VXi",
+    "year_of_manufacture": 2022,
+    "engine_number": "ABC123456",
+    "chassis_number": "XYZ987654"
+  },
+  "status": "active",
+  "start_date": "2023-01-15",
+  "end_date": "2024-01-14",
+  "premium_paid": true,
+  "coverage": {
+    "claim_types": [
+      "motor",
+      "health",
+      "property"
+    ],
+    "max_claim_amount": 500000,
+    "deductible": 10000,
+    "includes_collision": true,
+    "collision_limit": 500000,
+    "includes_theft": true,
+    "theft_limit": 1000000,
+    "includes_natural_disaster": true,
+    "disaster_limit": 2000000,
+    "includes_roadside_assistance": true,
+    "includes_legal_liability": true,
+    "liability_limit": 5000000,
+    "includes_personal_accident": true,
+    "personal_accident_limit": 250000,
+    "includes_zero_depreciation": true,
+    "includes_engine_protection": true,
+    "engine_protection_limit": 100000
+  },
+  "exclusions": {
+    "exclude_commercial_use": true,
+    "exclude_racing": true,
+    "exclude_rally": true,
+    "exclude_valet": false,
+    "exclude_mechanical_breakdown": false,
+    "exclude_wear_tear": true,
+    "exclude_natural_calamity": false,
+    "exclude_high_speed_driving": true,
+    "exclude_unlicensed_driver": true,
+    "exclude_under_influence": true,
+    "exclude_unregistered_vehicle": true,
+    "exclude_unauthorized_modification": true,
+    "exclude_negligent_maintenance": false
+  },
+  "riders": [
+    "Accidental Damage Coverage",
+    "Depreciation Waiver",
+    "Consumables Coverage",
+    "Tyre Protection"
+  ],
+  "claim_limits": {
+    "own_damage": 500000,
+    "third_party_liability": 5000000,
+    "medical_expenses": 250000,
+    "personal_accident": 500000,
+    "accessories": 50000,
+    "pillion_personal_accident": 200000
+  },
+  "no_claim_bonus": {
+    "year_1": "0%",
+    "year_2": "20%",
+    "year_3": "35%",
+    "year_4": "50%",
+    "year_5_plus": "65%"
+  },
+  "service_network": [
+    "National Insurance",
+    "Apollo Hospitals",
+    "ACKO Partners",
+    "Multiple repair centers in India"
+  ],
+  "claim_process": {
+    "max_settlement_days": 30,
+    "documentation_required": [
+      "FIR (for theft)",
+      "Doctor's report (for health)",
+      "Photos of damage",
+      "Repair estimates",
+      "Police report (for third-party)"
+    ]
+  },
+  "premium_details": {
+    "annual_premium": 45000,
+    "payment_frequency": "annual",
+    "payment_mode": "online",
+    "gst": 18,
+    "total_with_gst": 53100
+  },
+  "metadata": {
+    "created_date": "2023-01-15T10:30:00Z",
+    "last_modified": "2024-01-10T15:45:30Z",
+    "valid_from": "2024-01-15",
+    "valid_till": "2025-01-14",
+    "agent_id": "AGENT123",
+    "branch_code": "BRANCH_MH01",
+    "policy_version": "2.0"
+  }
+}

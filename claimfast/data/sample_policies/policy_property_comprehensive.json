@@ -1,0 +1,158 @@
+{
+  "policy_id": "POL_PROPERTY_001",
+  "policy_type": "property_comprehensive",
+  "policyholder_name": "Raj Kumar",
+  "property_details": {
+    "property_type": "residential_house",
+    "address": "123 MG Road, Bangalore, Karnataka",
+    "construction_year": 2015,
+    "construction_type": "concrete",
+    "carpet_area_sqft": 2500,
+    "number_of_stories": 2,
+    "number_of_rooms": 4
+  },
+  "status": "active",
+  "start_date": "2023-06-01",
+  "end_date": "2024-05-31",
+  "premium_paid": true,
+  "coverage": {
+    "claim_types": ["property", "motor", "health"],
+    "coverage_type": "comprehensive",
+    "building_sum_insured": 5000000,
+    "contents_sum_insured": 1000000,
+    "deductible": 50000,
+    "deductible_percentage": 5,
+    "includes_fire": true,
+    "fire_limit": 5000000,
+    "includes_flood": true,
+    "flood_limit": 5000000,
+    "includes_earthquake": false,
+    "includes_theft": true,
+    "theft_limit": 1000000,
+    "includes_theft_of_valuables": true,
+    "valuables_limit": 500000,
+    "includes_malicious_damage": true,
+    "malicious_damage_limit": 2000000,
+    "includes_burglary": true,
+    "burglary_limit": 1000000,
+    "includes_riot_strike_civil": true,
+    "riot_limit": 3000000,
+    "includes_subsidence": true,
+    "subsidence_limit": 1000000,
+    "includes_impact_damage": true,
+    "impact_limit": 500000,
+    "includes_temporary_dislocation": true,
+    "dislocation_limit": 200000,
+    "includes_emergency_repairs": true,
+    "emergency_repairs_limit": 100000
+  },
+  "exclusions": {
+    "exclude_earthquake": true,
+    "exclude_wear_tear": true,
+    "exclude_defective_construction": true,
+    "exclude_gradual_deterioration": true,
+    "exclude_negligence": false,
+    "exclude_structural_damage": false,
+    "exclude_faulty_workmanship": false,
+    "exclude_war_terrorism": true,
+    "exclude_nuclear_radiation": true,
+    "exclude_pollution": true,
+    "exclude_maintenance_cost": true,
+    "exclude_landscaping": true,
+    "exclude_items_left_for_repair": false,
+    "exclude_empty_property": true,
+    "exclude_period_of_vacancy": 180
+  },
+  "covered_items": {
+    "structure": [
+      "Walls",
+      "Roof",
+      "Floors",
+      "Doors",
+      "Windows",
+      "Fixtures and fittings",
+      "Plumbing",
+      "Electrical wiring",
+      "Sanitary fittings"
+    ],
+    "contents": [
+      "Furniture",
+      "Home appliances",
+      "Electronic equipment",
+      "Crockery and glassware",
+      "Clothing and personal effects",
+      "Bedding and linen",
+      "Books and paintings",
+      "Decorative items"
+    ],
+    "high_value_items": [
+      "Jewelry",
+      "Watches",
+      "Cameras",
+      "Computers",
+      "Mobile devices"
+    ]
+  },
+  "valuables_coverage": {
+    "jewelry": 200000,
+    "watches_cameras": 100000,
+    "computers_electronics": 150000,
+    "cash_documents": 50000,
+    "special_items_schedule": true
+  },
+  "claim_process": {
+    "survey_required": true,
+    "survey_threshold": 100000,
+    "max_settlement_days": 30,
+    "documentation_required": [
+      "Incident report",
+      "FIR (for theft/burglary)",
+      "Police report",
+      "Photos of damage",
+      "Repair estimates",
+      "Invoices of items",
+      "Proof of purchase",
+      "Building approval drawings",
+      "List of contents lost"
+    ]
+  },
+  "maintenance_requirements": {
+    "periodic_inspection_required": true,
+    "inspection_frequency_months": 12,
+    "fire_safety_measures_required": true,
+    "security_system_required": false,
+    "locks_and_hinges_maintenance": true
+  },
+  "discount_eligibility": {
+    "senior_citizen_discount": "10%",
+    "multi_policy_discount": "15%",
+    "approved_security_system": "10%",
+    "claims_free_years": "5% per year (max 25%)"
+  },
+  "premium_details": {
+    "annual_premium": 25000,
+    "payment_frequency": "annual",
+    "payment_mode": "online",
+    "gst": 18,
+    "total_with_gst": 29500
+  },
+  "additional_benefits": {
+    "emergency_assistance": true,
+    "helpline_24x7": true,
+    "emergency_repairs_service": true,
+    "home_care_assistance": true,
+    "counseling_support": true,
+    "rebuild_guarantee": true
+  },
+  "metadata": {
+    "created_date": "2023-06-01T11:30:00Z",
+    "last_modified": "2024-01-10T16:00:00Z",
+    "valid_from": "2024-06-01",
+    "valid_till": "2025-05-31",
+    "insurer": "PropertySecure Insurance Ltd",
+    "branch_code": "BRANCH_KA01",
+    "policy_version": "2.1",
+    "average_monthly_claims": 0,
+    "claims_history": []
+  }
+}
