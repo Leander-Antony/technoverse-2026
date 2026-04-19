@@ -5,7 +5,7 @@ Validates and standardizes claim input data.
 
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List
 import logging
 
@@ -130,8 +130,15 @@ class FNOLIntakeAgent:
         if not submission.incident_description or len(submission.incident_description) < 10:
             validation_errors.append("Incident description must be at least 10 characters")
         
-        # Validate incident date is not in future
-        if submission.incident_date > datetime.now():
+        # Validate incident date is not in future.
+        # Normalize both values to timezone-aware UTC to avoid aware/naive comparison errors.
+        incident_date = submission.incident_date
+        if incident_date.tzinfo is None:
+            incident_date_utc = incident_date.replace(tzinfo=timezone.utc)
+        else:
+            incident_date_utc = incident_date.astimezone(timezone.utc)
+
+        if incident_date_utc > datetime.now(timezone.utc):
             validation_errors.append("Incident date cannot be in the future")
         
         # Create summary

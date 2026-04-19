@@ -22,7 +22,7 @@ pytest tests/ --cov=agents --cov=models --cov-report=html
 # Full pipeline test
 pytest tests/test_pipeline_integration.py -v
 
-# Test with real Gemini API
+# Test with real Vertex AI Gemini
 USE_MOCK_VISION_API=false pytest tests/test_damage_assessment.py -v
 
 # Load testing
@@ -133,7 +133,7 @@ Backend Orchestrator receives request
 │   └─ Generates unique claim_id
 │
 ├─→ Stage 2: Damage Assessment Agent (~15-20 sec)
-│   ├─ Sends images to Gemini Vision API
+│   ├─ Sends images to Vertex AI Gemini
 │   ├─ Gets damage classification
 │   ├─ Calculates severity score
 │   └─ Flags potential fraud indicators
@@ -290,7 +290,7 @@ curl http://localhost:8000/openapi.json > schema.json
 ### Issue: Vision API Timeout
 
 ```
-Error: Gemini Vision API request timeout
+Error: Vertex AI Gemini request timeout
 ```
 
 **Solution:**

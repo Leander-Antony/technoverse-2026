@@ -117,7 +117,7 @@
   "metadata": {
     "claim_version": "1.0",
     "processing_backend": "ClaimFast v1.0",
-    "gemini_vision_model": "gemini-1.5-vision-latest",
+    "vertex_ai_model": "gemini-1.5-flash-002",
     "final_review_status": "automated_decision_final",
     "manual_review_required": false,
     "escalation_flag": false

@@ -1,6 +1,6 @@
 """
 Damage Assessment Agent - Vision-based damage analysis.
-Uses Gemini Vision API to analyze uploaded images/videos.
+Uses Vertex AI Gemini models to analyze uploaded images/videos.
 """
 
 import json
@@ -9,6 +9,9 @@ import requests
 from typing import Dict, Any, List, Tuple
 from datetime import datetime
 import logging
+
+import google.auth
+from google.auth.transport.requests import Request as GoogleAuthRequest
 
 from models.schemas import (
     DamageAssessmentOutput, SeverityLevel, AuditLogEntry
@@ -31,8 +34,9 @@ class DamageAssessmentAgent:
     
     def __init__(self):
         self.agent_name = "Damage_Assessment_Agent"
-        self.api_key = config.GEMINI_API_KEY
-        self.model = config.GEMINI_MODEL
+        self.project_id = config.VERTEX_AI_PROJECT_ID
+        self.location = config.VERTEX_AI_LOCATION
+        self.model = config.VERTEX_AI_MODEL
         self.use_mock = config.USE_MOCK_VISION_API
     
     def analyze_damages(self, claim_id: str, media_links: List[str], 
@@ -53,7 +57,7 @@ class DamageAssessmentAgent:
         if self.use_mock:
             return self._analyze_damages_mock(claim_id, media_links, claim_type)
         
-        # Real Gemini Vision API analysis
+        # Real Vertex AI Gemini analysis
         damage_analysis = []
         
         for media_link in media_links[:3]:  # Limit to 3 images for API cost control
@@ -73,7 +77,7 @@ class DamageAssessmentAgent:
     
     def _analyze_single_image(self, image_url: str, claim_type: str) -> Dict[str, Any]:
         """
-        Analyze a single image using Gemini Vision API.
+        Analyze a single image using Vertex AI Gemini.
         
         Args:
             image_url: URL to image
@@ -89,7 +93,7 @@ class DamageAssessmentAgent:
             # Create API request
             prompt = self._create_vision_prompt(claim_type)
             
-            analysis = self._call_gemini_vision_api(image_data, prompt)
+            analysis = self._call_vertex_ai_vision_api(image_data, prompt)
             
             return analysis
         
@@ -97,17 +101,29 @@ class DamageAssessmentAgent:
             logger.error(f"Vision API error: {str(e)}")
             return self._get_fallback_analysis()
     
-    def _call_gemini_vision_api(self, image_data: bytes, prompt: str) -> Dict[str, Any]:
+    def _call_vertex_ai_vision_api(self, image_data: bytes, prompt: str) -> Dict[str, Any]:
         """
-        Call Gemini Vision API with image and prompt.
+        Call Vertex AI Gemini with image and prompt.
         """
+        if not self.project_id:
+            raise RuntimeError("VERTEX_AI_PROJECT_ID is not configured")
+
         # Encode image to base64
         encoded_image = base64.standard_b64encode(image_data).decode('utf-8')
         
-        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-vision-latest:generateContent"
+        url = (
+            f"https://{self.location}-aiplatform.googleapis.com/v1/"
+            f"projects/{self.project_id}/locations/{self.location}/publishers/google/"
+            f"models/{self.model}:generateContent"
+        )
+
+        credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+        if not credentials.valid:
+            credentials.refresh(GoogleAuthRequest())
         
         headers = {
             "Content-Type": "application/json",
+            "Authorization": f"Bearer {credentials.token}",
         }
         
         payload = {
@@ -115,18 +131,16 @@ class DamageAssessmentAgent:
                 "parts": [
                     {"text": prompt},
                     {
-                        "inline_data": {
-                            "mime_type": "image/jpeg",
+                        "inlineData": {
+                            "mimeType": "image/jpeg",
                             "data": encoded_image
                         }
                     }
                 ]
             }]
         }
-        
-        params = {"key": self.api_key}
-        
-        response = requests.post(url, json=payload, headers=headers, params=params, timeout=30)
+
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
         response.raise_for_status()
         
         result = response.json()
@@ -137,7 +151,7 @@ class DamageAssessmentAgent:
         return analysis
     
     def _parse_vision_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
-        """Parse Gemini Vision API response"""
+        """Parse Vertex AI Gemini response"""
         try:
             content = response.get("candidates", [{}])[0].get("content", {})
             text = content.get("parts", [{}])[0].get("text", "")
@@ -345,7 +359,7 @@ Format as JSON with keys: damage_type, severity_score, affected_areas, confidenc
             details={
                 "claim_id": claim_id,
                 "stage": "Damage Assessment",
-                "api_used": "Gemini Vision"
+                "api_used": "Vertex AI Gemini"
             }
         )
 

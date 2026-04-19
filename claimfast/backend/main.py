@@ -437,7 +437,7 @@ async def general_exception_handler(request, exc):
 async def startup_event():
     """Initialize on app startup"""
     logger.info(f"ClaimFast API starting (Environment: {config.DEPLOYMENT_ENV})")
-    logger.info(f"Gemini Vision API: {'Mock' if config.USE_MOCK_VISION_API else 'Production'}")
+    logger.info(f"Vertex AI Gemini: {'Mock' if config.USE_MOCK_VISION_API else 'Production'}")
     logger.info(f"CORS origins: {config.CORS_ORIGINS}")
 
 

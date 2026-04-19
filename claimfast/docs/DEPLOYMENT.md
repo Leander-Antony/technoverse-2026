@@ -20,7 +20,7 @@
 - **Node.js 16+ and npm**
 - **Git**
 - **Virtual environment tool** (venv, conda)
-- **Gemini API Key** (get from [Google AI Studio](https://aistudio.google.com/))
+- **Google Cloud project with Vertex AI enabled**
 
 ### Step 1: Clone Repository
 
@@ -53,15 +53,18 @@ pip install -r requirements.txt
 
 #### Configure Environment Variables
 
-Create `.env` file in `backend/` directory:
+Create `backend/.env` file:
 
 ```env
 # API Configuration
 DEPLOYMENT_ENV=development
 LOG_LEVEL=INFO
 
-# Google Gemini API
-GEMINI_API_KEY=your_gemini_api_key_here
+# Vertex AI
+VERTEX_AI_PROJECT_ID=your-gcp-project-id
+VERTEX_AI_LOCATION=us-central1
+VERTEX_AI_MODEL=gemini-1.5-flash-002
+GOOGLE_APPLICATION_CREDENTIALS=C:\path\to\service-account.json
 
 # Vision API (use mock for development)
 USE_MOCK_VISION_API=true
@@ -148,7 +151,10 @@ services:
       - "8000:8000"
     environment:
       DEPLOYMENT_ENV: production
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      VERTEX_AI_PROJECT_ID: ${VERTEX_AI_PROJECT_ID}
+      VERTEX_AI_LOCATION: ${VERTEX_AI_LOCATION}
+      VERTEX_AI_MODEL: ${VERTEX_AI_MODEL}
+      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}
       USE_MOCK_VISION_API: "false"
     volumes:
       - ./backend/logs:/app/logs
@@ -243,8 +249,9 @@ CMD ["serve", "-s", "build", "-l", "3000"]
 #### 4. Deploy with Docker Compose
 
 ```bash
-# Set API key
-export GEMINI_API_KEY=your_api_key_here
+# Set Vertex AI project credentials
+export VERTEX_AI_PROJECT_ID=your_project_id
+export VERTEX_AI_LOCATION=us-central1
 
 # Start services
 docker-compose up -d
@@ -281,11 +288,23 @@ Globals:
     Environment:
       Variables:
         DEPLOYMENT_ENV: production
-        GEMINI_API_KEY: !Ref GeminiApiKey
+        VERTEX_AI_PROJECT_ID: !Ref VertexAiProjectId
+        VERTEX_AI_LOCATION: !Ref VertexAiLocation
+        VERTEX_AI_MODEL: !Ref VertexAiModel
+        GOOGLE_APPLICATION_CREDENTIALS: !Ref GoogleApplicationCredentials
         USE_MOCK_VISION_API: "false"
 
 Parameters:
-  GeminiApiKey:
+  VertexAiProjectId:
+    Type: String
+    NoEcho: true
+  VertexAiLocation:
+    Type: String
+    Default: us-central1
+  VertexAiModel:
+    Type: String
+    Default: gemini-1.5-flash-002
+  GoogleApplicationCredentials:
     Type: String
     NoEcho: true
 
@@ -365,7 +384,7 @@ sam deploy \
   --template-file template.yaml \
   --stack-name claimfast-stack \
   --capabilities CAPABILITY_IAM \
-  --parameter-overrides GeminiApiKey=your_key_here \
+  --parameter-overrides VertexAiProjectId=your_project_id \
   --region us-east-1
 ```
 
@@ -395,7 +414,9 @@ LOG_LEVEL=INFO
 USE_MOCK_VISION_API=false
 USE_MOCK_FRAUD_DB=true
 CORS_ORIGINS=["https://staging.claimfast.com"]
-GEMINI_API_KEY=your_staging_key
+VERTEX_AI_PROJECT_ID=your_staging_project_id
+VERTEX_AI_LOCATION=us-central1
+VERTEX_AI_MODEL=gemini-1.5-flash-002
 DATABASE_URL=postgresql://user:pass@db.staging.rds.amazonaws.com/claimfast
 ```
 
@@ -409,7 +430,9 @@ LOG_LEVEL=WARNING
 USE_MOCK_VISION_API=false
 USE_MOCK_FRAUD_DB=false
 CORS_ORIGINS=["https://claimfast.com"]
-GEMINI_API_KEY=your_production_key
+VERTEX_AI_PROJECT_ID=your_production_project_id
+VERTEX_AI_LOCATION=us-central1
+VERTEX_AI_MODEL=gemini-1.5-flash-002
 DATABASE_URL=postgresql://user:pass@db.prod.rds.amazonaws.com/claimfast
 ```
 
@@ -434,7 +457,8 @@ eksctl create cluster --name claimfast --region us-east-1
 # Deploy
 helm install claimfast ./claimfast \
   --set image.tag=v1.0.0 \
-  --set geminiApiKey=$GEMINI_API_KEY \
+  --set vertexAiProjectId=$VERTEX_AI_PROJECT_ID \
+  --set vertexAiLocation=$VERTEX_AI_LOCATION \
   --namespace production
 ```
 
@@ -533,11 +557,12 @@ LOGGING_CONFIG = {
 #### 1. Vision API Connection Error
 
 ```
-Error: Could not reach Gemini Vision API
+Error: Could not reach Vertex AI Gemini
+Error: Could not reach Vertex AI Gemini
 ```
 
 **Solution:**
-- Verify GEMINI_API_KEY is set correctly
+- Verify VERTEX_AI_PROJECT_ID and Google credentials are set correctly
 - Check internet connectivity
 - Use USE_MOCK_VISION_API=true for testing
 
@@ -548,7 +573,7 @@ Error: Processing exceeded 60-second limit
 ```
 
 **Solution:**
-- Check Gemini API response times
+- Check Vertex AI response times
 - Reduce image resolution
 - Increase Lambda timeout to 120 seconds
 

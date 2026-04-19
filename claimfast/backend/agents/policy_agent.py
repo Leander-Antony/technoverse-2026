@@ -323,7 +323,7 @@ class PolicyUnderstandingAgent:
         
         return estimated_cost
     
-    def get_audit_log(self, claim_id: str, policy_id: str) -> AuditLogEntry:
+    def get_audit_log(self, claim_id: str, policy_id: Optional[str] = None) -> AuditLogEntry:
         """Generate audit log entry for this agent"""
         return AuditLogEntry(
             agent=self.agent_name,
@@ -331,7 +331,7 @@ class PolicyUnderstandingAgent:
             timestamp=datetime.now(),
             details={
                 "claim_id": claim_id,
-                "policy_id": policy_id,
+                "policy_id": policy_id or "unknown",
                 "stage": "Policy Understanding"
             }
         )

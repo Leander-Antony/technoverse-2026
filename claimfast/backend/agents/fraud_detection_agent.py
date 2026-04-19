@@ -5,7 +5,7 @@ Cross-checks claim data against fraud indicators and patterns.
 
 import json
 from typing import Dict, Any, List, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 import hashlib
 
@@ -250,13 +250,21 @@ class FraudDetectionAgent:
             "image_metadata_check": True
         }
         
-        # Check incident date is reasonable
-        if incident_date > datetime.now():
+        # Check incident date is reasonable.
+        # Normalize to timezone-aware UTC to avoid aware/naive comparison errors.
+        if incident_date.tzinfo is None:
+            incident_date_utc = incident_date.replace(tzinfo=timezone.utc)
+        else:
+            incident_date_utc = incident_date.astimezone(timezone.utc)
+
+        now_utc = datetime.now(timezone.utc)
+
+        if incident_date_utc > now_utc:
             metadata_risk += 30
             flags.append("Incident date is in the future")
             details["incident_date_valid"] = False
         
-        if (datetime.now() - incident_date).days > 90:
+        if (now_utc - incident_date_utc).days > 90:
             metadata_risk += 10
             flags.append("Claim filed more than 90 days after incident")
         
@@ -374,7 +382,7 @@ class FraudDetectionAgent:
             ]
         }
     
-    def get_audit_log(self, claim_id: str, policy_id: str) -> AuditLogEntry:
+    def get_audit_log(self, claim_id: str, policy_id: str = "unknown") -> AuditLogEntry:
         """Generate audit log entry for this agent"""
         return AuditLogEntry(
             agent=self.agent_name,

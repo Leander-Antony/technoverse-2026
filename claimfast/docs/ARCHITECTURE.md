@@ -19,7 +19,7 @@
 ### Key Features
 
 - ⚡ **Ultra-Fast Processing**: Claims processed end-to-end in < 60 seconds
-- 🤖 **AI-Powered**: Multi-agent system using LangChain and Gemini Vision API
+- 🤖 **AI-Powered**: Multi-agent system using LangChain and Vertex AI Gemini
 - 🔐 **Fraud Detection**: Intelligent risk scoring and pattern recognition
 - 📊 **Explainable AI**: IRDAI-compliant decision explanations
 - 🏗️ **Microservices Ready**: AWS Lambda and containerization support
@@ -78,7 +78,7 @@
 │    AGENT        │      │  ASSESSMENT      │  │ POLICY   │  │  FRAUD   │
 │                 │      │    AGENT         │  │  AGENT   │  │ DETECTION│
 │ • Validates     │      │                  │  │          │  │          │
-│   input data    │      │ • Gemini Vision  │  │ • Load   │  │ • History│
+│   input data    │      │ • Vertex AI Gemini│  │ • Load   │  │ • History│
 │ • Standardizes  │      │   API analysis   │  │   policy │  │ • Patterns
 │   format        │      │ • Damage type    │  │ • Parse  │  │ • Flags  │
 │ • Detects errors│      │   classification │  │   rules  │  │ • Risk   │
@@ -177,7 +177,7 @@ User Input
     │   └─→ Output: IntakeAgentOutput
     │
     ├─→ STAGE 2: DamageAssessmentAgent.analyze_damages()
-    │   └─→ Gemini Vision API: Analyze each image
+    │   └─→ Vertex AI Gemini: Analyze each image
     │   └─→ Classify damage type, severity
     │   └─→ Output: DamageAssessmentOutput
     │
@@ -354,7 +354,7 @@ Response:
 - Python 3.9+
 - Node.js 16+
 - Docker & Docker Compose (optional)
-- Google Gemini API key
+- Vertex AI project credentials
 - AWS account (for Lambda deployment, optional)
 
 ### Local Development

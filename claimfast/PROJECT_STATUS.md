@@ -80,7 +80,7 @@ Input: Claim with media files
   • Generates claim_id
   ↓ (1-2 sec)
 [Stage 2] Damage Assessment Agent
-  • Gemini Vision API analysis
+  • Vertex AI Gemini analysis
   • Damage classification
   • Severity scoring (0-100)
   ↓ (15-20 sec)
@@ -117,7 +117,7 @@ Output: Complete ClaimProcessingContext with decision
 - FastAPI 0.104
 - LangChain 0.1.0
 - Pydantic 2.5
-- Google Generative AI (Gemini Vision)
+- Google Cloud Vertex AI (Gemini model)
 - SQLAlchemy 2.0
 - Uvicorn
 
@@ -190,7 +190,7 @@ claimfast/
 
 ### Core Features
 - ✅ Multi-agent LangChain orchestration
-- ✅ Gemini Vision API integration (with mock fallback)
+- ✅ Vertex AI Gemini integration (with mock fallback)
 - ✅ End-to-end claim processing < 60 seconds
 - ✅ 6-stage sequential pipeline
 - ✅ IRDAI-compliant decision explanations
@@ -234,7 +234,7 @@ claimfast/
 ### Prerequisites
 - Python 3.9+
 - Node.js 16+
-- Gemini API Key (optional for demo)
+- Vertex AI project credentials (optional for demo)
 
 ### Local Deployment
 
@@ -246,7 +246,7 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 2. Configure environment
-echo "GEMINI_API_KEY=your_key_here" > .env
+echo "VERTEX_AI_PROJECT_ID=your_project_id" > .env
 echo "DEBUG=true" >> .env
 
 # 3. Start backend

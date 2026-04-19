@@ -4,9 +4,11 @@ Supports environment-based configuration for different deployment stages.
 """
 
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
 
 
 class Config:
@@ -17,9 +19,10 @@ class Config:
     API_VERSION = "1.0.0"
     API_DESCRIPTION = "Automated First Notice of Loss processing"
     
-    # Google Gemini Configuration
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL = "gemini-1.5-vision-latest"
+    # Vertex AI Configuration
+    VERTEX_AI_PROJECT_ID = os.getenv("VERTEX_AI_PROJECT_ID", "")
+    VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1")
+    VERTEX_AI_MODEL = os.getenv("VERTEX_AI_MODEL", "gemini-1.5-flash-002")
     
     # LangChain Configuration
     LANGCHAIN_VERBOSE = os.getenv("LANGCHAIN_VERBOSE", "false").lower() == "true"

@@ -11,7 +11,7 @@
 
 - ⚡ **Ultra-Fast**: Claims processed end-to-end in **< 60 seconds**
 - 🤖 **AI-Powered**: Multi-agent architecture with LangChain
-- 👁️ **Vision Analysis**: Gemini Vision API for damage assessment
+- 👁️ **Vision Analysis**: Vertex AI Gemini for damage assessment
 - 🔐 **Fraud Detection**: ML-based risk scoring and pattern recognition
 - 📊 **Explainable**: IRDAI-compliant decision explanations
 - 📱 **Mobile-First**: React SPA with real-time updates
@@ -65,7 +65,7 @@
 - Python 3.9+
 - Node.js 16+
 - Docker (optional)
-- Gemini API Key
+- Google Cloud project with Vertex AI enabled
 
 ### Local Development (5 minutes)
 
@@ -81,8 +81,8 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 3. Configure environment
-cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
+cp backend/.env.example backend/.env
+# Edit backend/.env with your Vertex AI project, location, and credentials
 
 # 4. Start backend
 uvicorn main:app --reload
@@ -122,7 +122,7 @@ ClaimFast processes claims through 6 sequential AI agents:
 
 ### Stage 2: Damage Assessment Agent 👁️
 
-- Analyzes images using Gemini Vision API
+- Analyzes images using Vertex AI Gemini
 - Classifies damage type
 - Estimates severity (0-100)
 - Detects visual fraud indicators
@@ -362,7 +362,7 @@ This project is licensed under the MIT License - see [LICENSE](./LICENSE) file f
 ## 🙏 Acknowledgments
 
 - LangChain team for amazing orchestration framework
-- Google for Gemini Vision API
+- Google for Vertex AI Gemini support
 - IRDAI for compliance guidelines
 - Insurance industry partners for domain expertise
 
