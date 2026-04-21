@@ -27,6 +27,8 @@ requests==2.31.0
 google-auth>=2.0,<3.0
 python-dateutil==2.8.2
 pytz==2023.3
+Pillow>=10.0.0  # For image forensics (PIL)
+numpy>=1.24.0  # For image analysis
 
 # Logging
 python-json-logger==2.0.7

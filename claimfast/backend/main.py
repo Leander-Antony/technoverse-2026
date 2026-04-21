@@ -10,6 +10,8 @@ import logging
 import asyncio
 from datetime import datetime
 from typing import List, Optional
+from pathlib import Path
+import uuid
 
 from models.schemas import (
     ClaimSubmission, ClaimSubmissionResponse, ClaimStatusResponse,
@@ -24,6 +26,9 @@ logging.basicConfig(
     format=config.LOG_FORMAT
 )
 logger = logging.getLogger(__name__)
+
+UPLOADS_DIR = Path(__file__).resolve().parent / "uploads"
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -109,7 +114,6 @@ async def submit_claim(
         
         # Parse incident date
         try:
-            from datetime import datetime
             incident_dt = datetime.fromisoformat(incident_date.replace('Z', '+00:00'))
         except ValueError:
             raise HTTPException(
@@ -117,13 +121,18 @@ async def submit_claim(
                 detail="Invalid incident date format. Use ISO 8601 format."
             )
         
-        # Process media files (convert to mock URLs for demo)
+        # Persist uploaded files locally so downstream forensics can analyze real bytes.
         media_links = []
         for file in media_files[:5]:  # Limit to 5 files
-            # In production, would upload to S3/Cloud Storage
-            mock_url = f"https://storage.example.com/{file.filename}"
-            media_links.append(mock_url)
-            logger.info(f"Media file received: {file.filename}")
+            original_name = Path(file.filename or "upload.bin").name
+            unique_name = f"{uuid.uuid4().hex}_{original_name}"
+            local_path = UPLOADS_DIR / unique_name
+
+            file_bytes = await file.read()
+            local_path.write_bytes(file_bytes)
+
+            media_links.append(local_path.resolve().as_uri())
+            logger.info(f"Media file saved: {local_path}")
         
         # Create claim submission
         user_data = UserDetails(
@@ -143,7 +152,6 @@ async def submit_claim(
         )
         
         # Generate claim ID
-        import uuid
         claim_id = f"CLM_{uuid.uuid4().hex[:12].upper()}"
         
         # Process claim asynchronously in background
@@ -171,7 +179,7 @@ async def process_claim_async(claim_id: str, submission: ClaimSubmission):
     """Process claim asynchronously"""
     try:
         logger.info(f"Starting async processing for claim {claim_id}")
-        await process_claim(submission)
+        await process_claim(submission, claim_id=claim_id)
     except Exception as e:
         logger.error(f"Error in async processing for {claim_id}: {str(e)}", exc_info=True)
 

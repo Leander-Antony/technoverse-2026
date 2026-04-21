@@ -11,3 +11,4 @@ htmlcov/
 .env.*
 *.log
 impostalk-b3348b11537c.json
+uploads

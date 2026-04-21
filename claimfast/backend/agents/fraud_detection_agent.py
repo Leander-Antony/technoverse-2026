@@ -8,6 +8,9 @@ from typing import Dict, Any, List, Tuple
 from datetime import datetime, timedelta, timezone
 import logging
 import hashlib
+import importlib.util
+from pathlib import Path
+from urllib.parse import urlparse, unquote
 
 from models.schemas import (
     FraudDetectionOutput, DamageAssessmentOutput, AuditLogEntry
@@ -31,6 +34,7 @@ class FraudDetectionAgent:
     def __init__(self):
         self.agent_name = "Fraud_Detection_Agent"
         self.use_mock_db = config.USE_MOCK_FRAUD_DB
+        self.fake_image_detector = self._load_fake_image_detector()
         
         # Mock claim history database
         self.claim_history_db = {}
@@ -40,7 +44,8 @@ class FraudDetectionAgent:
                     damage_assessment: DamageAssessmentOutput,
                     incident_description: str,
                     incident_date: datetime,
-                    incident_location: str) -> FraudDetectionOutput:
+                    incident_location: str,
+                    media_links: List[str] | None = None) -> FraudDetectionOutput:
         """
         Detect fraud indicators in claim.
         
@@ -101,6 +106,20 @@ class FraudDetectionAgent:
         fraud_score += pattern_risk
         fraud_flags.extend(pattern_flags)
         fraud_indicators["fraud_patterns"] = pattern_details
+
+        # 6. Image authenticity analysis using fake_image.py heuristics
+        image_risk, image_flags, image_details = self._check_image_authenticity(media_links or [])
+        fraud_score += image_risk
+        fraud_flags.extend(image_flags)
+        fraud_indicators["image_authenticity"] = image_details
+        logger.info(
+            "Image authenticity for %s: analyzed=%s/%s, risk_delta=%s, detector_loaded=%s",
+            claim_id,
+            image_details.get("images_analyzed", 0),
+            image_details.get("media_links_received", 0),
+            image_risk,
+            image_details.get("detector_loaded", False),
+        )
         
         # Cap score at 100
         fraud_score = min(fraud_score, 100)
@@ -120,6 +139,125 @@ class FraudDetectionAgent:
         logger.info(f"Fraud detection for {claim_id}: score={fraud_score}, action={recommended_action}")
         
         return output
+
+    def _load_fake_image_detector(self):
+        """Load fake_image.py detector module from repository root if available."""
+        try:
+            repo_root = Path(__file__).resolve().parents[3]
+            detector_path = repo_root / "fraud detection test" / "fake_image.py"
+            if not detector_path.exists():
+                logger.warning("fake_image.py not found at %s", detector_path)
+                return None
+
+            spec = importlib.util.spec_from_file_location("fake_image_detector", detector_path)
+            if spec is None or spec.loader is None:
+                logger.warning("Unable to create import spec for %s", detector_path)
+                return None
+
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            if not hasattr(module, "run"):
+                logger.warning("fake_image.py does not expose run(image_path, reference_dir=None)")
+                return None
+            logger.info("Loaded fake image detector from %s", detector_path)
+            return module
+        except Exception as exc:
+            logger.warning("Failed to load fake image detector: %s", exc)
+            return None
+
+    def _resolve_local_image_path(self, media_link: str) -> Path | None:
+        """Resolve local filesystem path from raw path or file:// URL."""
+        if not media_link:
+            return None
+
+        raw = media_link.strip()
+        candidate = Path(raw)
+        if candidate.exists() and candidate.is_file():
+            return candidate
+
+        if raw.startswith("file://"):
+            parsed = urlparse(raw)
+            parsed_path = unquote(parsed.path or "")
+            if parsed_path.startswith("/") and len(parsed_path) > 2 and parsed_path[2] == ":":
+                parsed_path = parsed_path[1:]
+            file_path = Path(parsed_path)
+            if file_path.exists() and file_path.is_file():
+                return file_path
+
+        return None
+
+    def _check_image_authenticity(self, media_links: List[str]) -> Tuple[int, List[str], Dict]:
+        """Run fake image detection heuristics and convert results into fraud signals."""
+        image_risk = 0
+        flags: List[str] = []
+        details: Dict[str, Any] = {
+            "detector_loaded": bool(self.fake_image_detector),
+            "media_links_received": len(media_links),
+            "images_analyzed": 0,
+            "results": [],
+            "skipped": [],
+        }
+
+        if not media_links:
+            details["reason"] = "No media links provided for forensic analysis"
+            return image_risk, flags, details
+
+        if not self.fake_image_detector:
+            details["reason"] = "fake_image.py detector module not available"
+            return image_risk, flags, details
+
+        for media_link in media_links[:3]:
+            local_path = self._resolve_local_image_path(media_link)
+            if local_path is None:
+                details["skipped"].append(
+                    {
+                        "media_link": media_link,
+                        "reason": "Only local file paths are supported for forensic analysis",
+                    }
+                )
+                continue
+
+            try:
+                result = self.fake_image_detector.run(local_path, reference_dir=None)
+                details["images_analyzed"] += 1
+
+                prediction = str(result.get("prediction", "unknown"))
+                confidence = float(result.get("confidence", 0.0))
+                details["results"].append(
+                    {
+                        "media_link": media_link,
+                        "local_path": str(local_path),
+                        "prediction": prediction,
+                        "confidence": confidence,
+                        "scores": result.get("scores", {}),
+                        "metadata_chain_verification": result.get("metadata_chain_verification", {}),
+                        "reasons": result.get("reasons", []),
+                    }
+                )
+
+                if prediction == "ai_generated":
+                    risk_delta = max(10, int(round(confidence * 25)))
+                    image_risk += risk_delta
+                    flags.append(f"Image appears AI-generated ({int(confidence * 100)}% confidence)")
+                elif prediction == "edited":
+                    risk_delta = max(6, int(round(confidence * 18)))
+                    image_risk += risk_delta
+                    flags.append(f"Image appears edited/manipulated ({int(confidence * 100)}% confidence)")
+
+                meta_status = result.get("metadata_chain_verification", {}).get("status")
+                if meta_status == "inconsistent":
+                    image_risk += 8
+                    flags.append("Image metadata chain is inconsistent")
+
+            except Exception as exc:
+                details["skipped"].append(
+                    {
+                        "media_link": media_link,
+                        "reason": f"Detector failed: {exc}",
+                    }
+                )
+
+        return image_risk, flags, details
     
     def _check_claim_history(self, policy_id: str, user_email: str) -> Tuple[int, List[str], Dict]:
         """Check user's claim history for patterns"""
@@ -404,7 +542,8 @@ def detect_fraud(claim_id: str, policy_id: str, user_email: str,
                 damage_assessment: DamageAssessmentOutput,
                 incident_description: str,
                 incident_date: datetime,
-                incident_location: str) -> FraudDetectionOutput:
+                incident_location: str,
+                media_links: List[str] | None = None) -> FraudDetectionOutput:
     """
     Public function to detect fraud in claim.
     
@@ -416,11 +555,12 @@ def detect_fraud(claim_id: str, policy_id: str, user_email: str,
         incident_description: Text description
         incident_date: Date of incident
         incident_location: Location of incident
+        media_links: Uploaded media paths/URLs
         
     Returns:
         FraudDetectionOutput with fraud risk score
     """
     return fraud_detection_agent.detect_fraud(
         claim_id, policy_id, user_email, damage_assessment,
-        incident_description, incident_date, incident_location
+        incident_description, incident_date, incident_location, media_links
     )

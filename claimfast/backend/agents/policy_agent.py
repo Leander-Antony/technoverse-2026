@@ -4,12 +4,12 @@ Parses policy rules and determines coverage validity.
 """
 
 import json
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Union
 from datetime import datetime, timedelta
 import logging
 
 from models.schemas import (
-    PolicyAgentOutput, PolicyRule, AuditLogEntry, ClaimType
+    PolicyAgentOutput, PolicyRule, AuditLogEntry, ClaimType, FraudDetectionOutput
 )
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,8 @@ class PolicyUnderstandingAgent:
     
     def evaluate_policy_coverage(self, claim_id: str, policy_id: str, 
                                 claim_type: ClaimType, 
-                                policy_data: Optional[Dict[str, Any]] = None) -> PolicyAgentOutput:
+                                policy_data: Optional[Dict[str, Any]] = None,
+                                fraud_detection_output: Optional[Dict[str, Any]] = None) -> PolicyAgentOutput:
         """
         Evaluate policy coverage for claim.
         
@@ -40,6 +41,7 @@ class PolicyUnderstandingAgent:
             policy_id: Insurance policy ID
             claim_type: Type of claim (motor/health/property)
             policy_data: Optional policy JSON data
+            fraud_detection_output: Optional fraud detection results with image authenticity signals
             
         Returns:
             PolicyAgentOutput with coverage evaluation
@@ -69,6 +71,23 @@ class PolicyUnderstandingAgent:
         # Check for triggered exclusions
         exclusions_triggered = self._check_exclusions(policy, claim_type)
         
+        # Build policy details dict
+        policy_details = {
+            "policy_id": policy_id,
+            "claim_type": claim_type.value,
+            "policy_status": policy.get("status", "active"),
+            "policy_start_date": policy.get("start_date"),
+            "policy_end_date": policy.get("end_date"),
+            "coverage_issues": issues,
+        }
+        
+        # Incorporate fraud/image authenticity signals into policy decisions
+        if fraud_detection_output:
+            fraud_adjustments = self._apply_fraud_signals_to_policy(
+                fraud_detection_output, exclusions_triggered, policy
+            )
+            policy_details["fraud_related_adjustments"] = fraud_adjustments
+        
         output = PolicyAgentOutput(
             claim_id=claim_id,
             coverage_valid=coverage_valid,
@@ -76,14 +95,7 @@ class PolicyUnderstandingAgent:
             deductible=deductible,
             policy_rules=policy_rules,
             exclusions_triggered=exclusions_triggered,
-            policy_details={
-                "policy_id": policy_id,
-                "claim_type": claim_type.value,
-                "policy_status": policy.get("status", "active"),
-                "policy_start_date": policy.get("start_date"),
-                "policy_end_date": policy.get("end_date"),
-                "coverage_issues": issues,
-            },
+            policy_details=policy_details,
             timestamp=datetime.now()
         )
         
@@ -323,7 +335,67 @@ class PolicyUnderstandingAgent:
         
         return estimated_cost
     
-    def get_audit_log(self, claim_id: str, policy_id: Optional[str] = None) -> AuditLogEntry:
+    def _apply_fraud_signals_to_policy(self, fraud_detection_output: Union[Dict[str, Any], FraudDetectionOutput],
+                                      exclusions_triggered: List[str],
+                                      policy: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Apply fraud/image authenticity signals to policy decisions.
+        High image fraud risk may trigger manual review or exclusions.
+        """
+        # Convert Pydantic model to dict if needed
+        if isinstance(fraud_detection_output, FraudDetectionOutput):
+            fraud_dict = fraud_detection_output.model_dump()
+        else:
+            fraud_dict = fraud_detection_output
+        
+        adjustments = {
+            "fraud_risk_score": fraud_dict.get("fraud_risk_score", 0),
+            "triggered_review": False,
+            "reason": None
+        }
+        
+        fraud_score = fraud_dict.get("fraud_risk_score", 0)
+        fraud_indicators = fraud_dict.get("fraud_indicators", {})
+        image_authenticity = fraud_indicators.get("image_authenticity", {})
+        
+        if image_authenticity:
+            images_analyzed = image_authenticity.get("images_analyzed", 0)
+            results = image_authenticity.get("results", [])
+            
+            for result in results:
+                prediction = result.get("prediction", "")
+                confidence = result.get("confidence", 0.0)
+                
+                # AI-generated images at high confidence = manual review
+                if prediction == "ai_generated" and confidence > 0.7:
+                    adjustments["triggered_review"] = True
+                    adjustments["reason"] = f"AI-generated image detected ({int(confidence * 100)}% confidence) - manual review required"
+                    exclusions_triggered.append("Images appear to be AI-generated or synthetic")
+                    break
+                
+                # Heavily edited images = caution but not auto-exclude
+                if prediction == "edited" and confidence > 0.75:
+                    if fraud_score >= 70:
+                        adjustments["triggered_review"] = True
+                        adjustments["reason"] = f"Images show heavy editing + high fraud score ({fraud_score}/100) - manual review required"
+                        break
+            
+            # Check metadata chain inconsistency
+            meta_status = image_authenticity.get("metadata_chain_verification", {}).get("status")
+            if meta_status == "inconsistent":
+                if fraud_score >= 60:
+                    adjustments["triggered_review"] = True
+                    adjustments["reason"] = "Image metadata chain inconsistency detected - manual review required"
+        
+        # High fraud score also triggers review
+        if fraud_score >= 80:
+            adjustments["triggered_review"] = True
+            if not adjustments["reason"]:
+                adjustments["reason"] = f"High fraud risk score ({fraud_score}/100) - manual review required"
+        
+        return adjustments
+    
+    def get_audit_log(self, claim_id: str) -> AuditLogEntry:
         """Generate audit log entry for this agent"""
         return AuditLogEntry(
             agent=self.agent_name,
@@ -331,7 +403,6 @@ class PolicyUnderstandingAgent:
             timestamp=datetime.now(),
             details={
                 "claim_id": claim_id,
-                "policy_id": policy_id or "unknown",
                 "stage": "Policy Understanding"
             }
         )
@@ -342,7 +413,8 @@ policy_agent = PolicyUnderstandingAgent()
 
 
 def evaluate_policy(claim_id: str, policy_id: str, claim_type: ClaimType,
-                   policy_data: Optional[Dict[str, Any]] = None) -> PolicyAgentOutput:
+                   policy_data: Optional[Dict[str, Any]] = None,
+                   fraud_detection_output: Optional[Dict[str, Any]] = None) -> PolicyAgentOutput:
     """
     Public function to evaluate policy coverage.
     
@@ -351,8 +423,9 @@ def evaluate_policy(claim_id: str, policy_id: str, claim_type: ClaimType,
         policy_id: Insurance policy ID
         claim_type: Type of claim
         policy_data: Optional policy JSON data
+        fraud_detection_output: Optional fraud detection output with image authenticity signals
         
     Returns:
         PolicyAgentOutput with coverage evaluation
     """
-    return policy_agent.evaluate_policy_coverage(claim_id, policy_id, claim_type, policy_data)
+    return policy_agent.evaluate_policy_coverage(claim_id, policy_id, claim_type, policy_data, fraud_detection_output)

@@ -45,8 +45,9 @@ class ClaimProcessingOrchestrator:
         self.claim_storage = {}  # In-memory storage for demo
         self.processing_contexts = {}  # Track all processing contexts
     
-    async def process_claim_end_to_end(self, 
-                                       submission: ClaimSubmission) -> ClaimProcessingContext:
+    async def process_claim_end_to_end(self,
+                                       submission: ClaimSubmission,
+                                       claim_id: Optional[str] = None) -> ClaimProcessingContext:
         """
         Process a claim end-to-end through all 6 agents.
         
@@ -62,12 +63,15 @@ class ClaimProcessingOrchestrator:
         start_time = time.time()
         
         # Initialize context
-        claim_id = f"CLM_{uuid.uuid4().hex[:12].upper()}"
+        claim_id = claim_id or f"CLM_{uuid.uuid4().hex[:12].upper()}"
         context = ClaimProcessingContext(
             claim_id=claim_id,
             original_submission=submission,
             processing_start_time=datetime.now()
         )
+
+        # Store immediately so status polling works while async processing is in progress.
+        self.claim_storage[claim_id] = context
         
         logger.info(f"Starting end-to-end processing for claim {claim_id}")
         print(f"\n🚀 Processing Claim: {claim_id}")
@@ -93,26 +97,26 @@ class ClaimProcessingOrchestrator:
             print(f"✓ Damage assessed: {context.damage_assessment_output.damage_type} "
                   f"({context.damage_assessment_output.severity_score}/100)")
             
-            # Stage 3: Policy Evaluation
-            print("\n📋 Stage 3: Policy Coverage Evaluation...")
-            context.policy_output = await self._stage_3_policy_evaluation(context)
-            print(f"✓ Policy evaluated: Coverage {'VALID' if context.policy_output.coverage_valid else 'INVALID'}")
-            
-            # Stage 4: Fraud Detection
-            print("\n🔐 Stage 4: Fraud Risk Detection...")
-            context.fraud_detection_output = await self._stage_4_fraud_detection(context)
+            # Stage 3: Fraud Detection (before policy, so policy can see image authenticity)
+            print("\n🔐 Stage 3: Fraud Risk & Image Authenticity Detection...")
+            context.fraud_detection_output = await self._stage_3_fraud_detection(context)
             print(f"✓ Fraud assessment: {context.fraud_detection_output.fraud_risk_score}/100 "
                   f"({context.fraud_detection_output.recommended_action})")
             
+            # Stage 4: Policy Evaluation (now with fraud/authenticity signals)
+            print("\n📋 Stage 4: Policy Coverage Evaluation...")
+            context.policy_output = await self._stage_4_policy_evaluation(context, context.fraud_detection_output)
+            print(f"✓ Policy evaluated: Coverage {'VALID' if context.policy_output.coverage_valid else 'INVALID'}")
+            
             # Stage 5: Decision Making
             print("\n⚖️ Stage 5: Final Decision...")
-            context.decision_output = await self._stage_5_decision(context)
+            context.decision_output = await self._stage_5_decision(context, context.policy_output)
             print(f"✓ Decision: {context.decision_output.final_decision.value.upper()} | "
                   f"Payout: ₹{context.decision_output.payout_amount:,.0f}")
             
             # Stage 6: Explainability & Audit
             print("\n📄 Stage 6: Explainability & Compliance...")
-            context.explainability_output = await self._stage_6_explainability(context)
+            context.explainability_output = await self._stage_6_explainability(context, context.policy_output)
             print(f"✓ Explanation generated (IRDAI-ready)")
             
             context.processing_end_time = datetime.now()
@@ -124,9 +128,6 @@ class ClaimProcessingOrchestrator:
             print(f"Total Processing Time: {processing_time:.2f} seconds")
             print(f"Target: < 60 seconds | Status: {'✓ PASSED' if processing_time < 60 else '✗ EXCEEDED'}")
             print("=" * 70 + "\n")
-            
-            # Store claim
-            self.claim_storage[claim_id] = context
             
             logger.info(f"Claim {claim_id} processed successfully in {processing_time:.2f}s")
             
@@ -141,7 +142,9 @@ class ClaimProcessingOrchestrator:
                              context: ClaimProcessingContext) -> Any:
         """Stage 1: FNOL Intake Validation"""
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, process_intake, submission)
+        intake_output = await loop.run_in_executor(None, process_intake, submission)
+        # Ensure all downstream stages use the externally assigned claim id.
+        return intake_output.model_copy(update={"claim_id": context.claim_id})
     
     async def _stage_2_damage_assessment(self, 
                                         context: ClaimProcessingContext) -> Any:
@@ -155,22 +158,9 @@ class ClaimProcessingOrchestrator:
             context.intake_output.claim_type.value
         )
     
-    async def _stage_3_policy_evaluation(self, 
-                                        context: ClaimProcessingContext) -> Any:
-        """Stage 3: Policy Coverage Evaluation"""
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            None,
-            evaluate_policy,
-            context.claim_id,
-            context.intake_output.user_data.policy_id,
-            context.intake_output.claim_type,
-            None  # Policy data - None to use default/DB
-        )
-    
-    async def _stage_4_fraud_detection(self,
+    async def _stage_3_fraud_detection(self,
                                       context: ClaimProcessingContext) -> Any:
-        """Stage 4: Fraud Risk Detection"""
+        """Stage 3: Fraud Risk Detection & Image Authenticity"""
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
             None,
@@ -181,10 +171,26 @@ class ClaimProcessingOrchestrator:
             context.damage_assessment_output,
             context.intake_output.incident_summary,
             context.original_submission.incident_date,
-            context.original_submission.incident_location or "Not specified"
+            context.original_submission.incident_location or "Not specified",
+            context.intake_output.media_links,
         )
     
-    async def _stage_5_decision(self, context: ClaimProcessingContext) -> Any:
+    async def _stage_4_policy_evaluation(self, 
+                                        context: ClaimProcessingContext,
+                                        fraud_detection_output: Any) -> Any:
+        """Stage 4: Policy Coverage Evaluation (with fraud signals)"""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            evaluate_policy,
+            context.claim_id,
+            context.intake_output.user_data.policy_id,
+            context.intake_output.claim_type,
+            None,  # Policy data - None to use default/DB
+            fraud_detection_output  # Pass fraud signals to policy agent
+        )
+    
+    async def _stage_5_decision(self, context: ClaimProcessingContext, policy_output: Any) -> Any:
         """Stage 5: Final Decision"""
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
@@ -192,12 +198,13 @@ class ClaimProcessingOrchestrator:
             make_decision,
             context.intake_output,
             context.damage_assessment_output,
-            context.policy_output,
+            policy_output,
             context.fraud_detection_output
         )
     
     async def _stage_6_explainability(self,
-                                     context: ClaimProcessingContext) -> Any:
+                                     context: ClaimProcessingContext,
+                                     policy_output: Any) -> Any:
         """Stage 6: Explainability & Audit"""
         
         # Build audit trail
@@ -229,7 +236,7 @@ class ClaimProcessingOrchestrator:
             context.decision_output,
             context.intake_output,
             context.damage_assessment_output,
-            context.policy_output,
+            policy_output,
             context.fraud_detection_output,
             audit_trail
         )
@@ -252,11 +259,11 @@ class ClaimProcessingOrchestrator:
         if context.damage_assessment_output:
             stage = "Damage Assessment"
             progress = 30
-        if context.policy_output:
-            stage = "Policy Evaluation"
-            progress = 45
         if context.fraud_detection_output:
             stage = "Fraud Detection"
+            progress = 45
+        if context.policy_output:
+            stage = "Policy Evaluation"
             progress = 60
         if context.decision_output:
             stage = "Decision Making"
@@ -291,11 +298,12 @@ class ClaimProcessingOrchestrator:
 orchestrator = ClaimProcessingOrchestrator()
 
 
-async def process_claim(submission: ClaimSubmission) -> ClaimProcessingContext:
+async def process_claim(submission: ClaimSubmission,
+                        claim_id: Optional[str] = None) -> ClaimProcessingContext:
     """
     Public async function to process a claim end-to-end.
     """
-    return await orchestrator.process_claim_end_to_end(submission)
+    return await orchestrator.process_claim_end_to_end(submission, claim_id=claim_id)
 
 
 def get_claim_status(claim_id: str) -> Optional[ClaimStatusResponse]:

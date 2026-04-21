@@ -9,6 +9,8 @@ import requests
 from typing import Dict, Any, List, Tuple
 from datetime import datetime
 import logging
+from pathlib import Path
+from urllib.parse import urlparse, unquote
 
 import google.auth
 from google.auth.transport.requests import Request as GoogleAuthRequest
@@ -207,7 +209,19 @@ class DamageAssessmentAgent:
         return analysis
     
     def _download_image(self, image_url: str) -> bytes:
-        """Download image from URL"""
+        """Download image from URL or read from local file path/file:// URI."""
+        if image_url.startswith("file://"):
+            parsed = urlparse(image_url)
+            parsed_path = unquote(parsed.path or "")
+            if parsed_path.startswith("/") and len(parsed_path) > 2 and parsed_path[2] == ":":
+                parsed_path = parsed_path[1:]
+            local_path = Path(parsed_path)
+            return local_path.read_bytes()
+
+        local_candidate = Path(image_url)
+        if local_candidate.exists() and local_candidate.is_file():
+            return local_candidate.read_bytes()
+
         response = requests.get(image_url, timeout=10)
         response.raise_for_status()
         return response.content
